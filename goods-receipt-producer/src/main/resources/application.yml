@@ -1,0 +1,15 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: goods-receipt-producer
+  rabbitmq:
+    host: localhost
+    port: 15672
+    username: guest
+    password: guest
+    exchange:
+      receipt-produce: x.goods-receipt-produce
+#    routingkey:
+#      receipt-produce: rk.goods-receipt-produce
