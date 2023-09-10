@@ -34,6 +34,7 @@ public class ReceiptErrorMessageResolver implements MessageRecoverer {
 				var sourceQueue = message.getMessageProperties().getConsumerQueue();
 				var failedMessage = new FailedGoodsReceiptDTO(receiptDTO.id(), receiptDTO.goodsName(), sourceQueue,
 						cause.getCause().getMessage());
+				log.info("[RECOVERER] backOff limit has finished for receipt {}", receiptDTO);
 				log.info("[RECOVERER] is moving failed receipt {} for triage", receiptDTO);
 				this.template.convertAndSend(receiptFailedEx, "", failedMessage);
 			} catch (Exception ex) {

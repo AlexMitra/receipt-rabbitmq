@@ -24,7 +24,7 @@ public class ReturnReceiptService implements ReturnMessageService<FailedGoodsRec
 	@Override
 	public void returnMessage(FailedGoodsReceipt failedGoodsReceipt, String exchange) {
 		var receiptDTO = new GoodsReceiptDTO(failedGoodsReceipt.getReceiptId(),
-				failedGoodsReceipt.getGoodsName(), Potential.SUCCESS);
+				failedGoodsReceipt.getGoodsName(), Potential.RECOVERED);
 		log.info("[TRIAGE RETURN] is sending receipt {} to a queue {}", receiptDTO,
 				failedGoodsReceipt.getQueueName());
 		MessageProperties messageProperties = new MessageProperties();
