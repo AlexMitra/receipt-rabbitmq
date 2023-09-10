@@ -31,6 +31,10 @@ public class ReceiptConsumeListener {
 					queue);
 			throw new UnsupportedOperationException("Some randon exception");
 		}
+		if (receiptDTO.potential().equals(Potential.RECOVERED)) {
+			log.info("[CONSUMER RECOVERED] is receiving goods receipt {} from [QUEUE] {}", receiptDTO, queue);
+			return;
+		}
 		log.info("[CONSUMER] is receiving goods receipt {} from [QUEUE] {}", receiptDTO, queue);
 	}
 }
