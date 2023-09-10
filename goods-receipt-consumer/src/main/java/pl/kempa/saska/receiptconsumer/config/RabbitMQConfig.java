@@ -3,20 +3,17 @@ package pl.kempa.saska.receiptconsumer.config;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Declarables;
-import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.rabbit.retry.MessageRecoverer;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.amqp.SimpleRabbitListenerContainerFactoryConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 
 @Configuration
 public class RabbitMQConfig {
@@ -47,16 +44,16 @@ public class RabbitMQConfig {
 	}
 
 	@Bean
-	public Declarables fanoutBindings() {
-		Queue fanoutQueue1 = new Queue(receiptProduceQ1, true);
-		Queue fanoutQueue2 = new Queue(receiptProduceQ2, true);
-		FanoutExchange fanoutExchange = new FanoutExchange(receiptProduceEx, true, false);
+	public Declarables mainQueuesBindings() {
+		var receiptQueue1 = new Queue(receiptProduceQ1, true);
+		var receiptQueue2 = new Queue(receiptProduceQ2, true);
+		var topicExchange = new TopicExchange(receiptProduceEx, true, false);
 		return new Declarables(
-				fanoutQueue1,
-				fanoutQueue2,
-				fanoutExchange,
-				BindingBuilder.bind(fanoutQueue1).to(fanoutExchange),
-				BindingBuilder.bind(fanoutQueue2).to(fanoutExchange));
+				receiptQueue1,
+				receiptQueue2,
+				topicExchange,
+				BindingBuilder.bind(receiptQueue1).to(topicExchange).with("rk.goods-receipt-produce-1"),
+				BindingBuilder.bind(receiptQueue2).to(topicExchange).with("rk.goods-receipt-produce-2"));
 	}
 
 	@Bean
@@ -72,7 +69,7 @@ public class RabbitMQConfig {
 	}
 
 	@Bean
-	public MessageRecoverer receiptMessageRecoverer(ConnectionFactory connectionFactory) {
+	public ReceiptErrorMessageResolver receiptMessageRecoverer(ConnectionFactory connectionFactory) {
 		return new ReceiptErrorMessageResolver(
 				rabbitTemplate(connectionFactory),
 				jsonMessageConverter()
@@ -80,13 +77,11 @@ public class RabbitMQConfig {
 	}
 
 	@Bean
-	public RetryOperationsInterceptor retryInterceptor(ConnectionFactory connectionFactory) {
-		return RetryInterceptorBuilder.StatelessRetryInterceptorBuilder
-				.stateless()
-				.maxAttempts(3)
-				.backOffOptions(2000, 1, 100000)
-				.recoverer(receiptMessageRecoverer(connectionFactory))
-				.build();
+	public RetryQueuesInterceptor retryQueuesInterceptor(ConnectionFactory connectionFactory) {
+		var interceptor = new RetryQueuesInterceptor();
+		interceptor.setRabbitTemplate(rabbitTemplate(connectionFactory));
+		interceptor.setRecoverer(receiptMessageRecoverer(connectionFactory));
+		return interceptor;
 	}
 
 	@Bean
@@ -94,9 +89,9 @@ public class RabbitMQConfig {
 			SimpleRabbitListenerContainerFactoryConfigurer configurer, ConnectionFactory connectionFactory) {
 		SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
 		configurer.configure(factory, connectionFactory());
-		factory.setAcknowledgeMode(AcknowledgeMode.AUTO);
+		factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);
 		factory.setMessageConverter(jsonMessageConverter());
-		factory.setAdviceChain(retryInterceptor(connectionFactory));
+		factory.setAdviceChain(retryQueuesInterceptor(connectionFactory));
 		return factory;
 	}
 }

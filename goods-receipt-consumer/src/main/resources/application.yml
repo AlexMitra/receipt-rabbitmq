@@ -12,6 +12,20 @@ spring:
     exchange:
       receipt-produce: x.goods-receipt-produce
       receipt-failed: x.goods-receipt-failed
+      receipt-retry-1: x.goods-receipt-retry-1
+      receipt-retry-2: x.goods-receipt-retry-2
+    routing-key:
+      receipt-produce-1: rk.goods-receipt-produce-1
+      receipt-produce-2: rk.goods-receipt-produce-2
     queue:
       receipt-produce-1: q.goods-receipt-produce-1
       receipt-produce-2: q.goods-receipt-produce-2
+      receipt-retry-1: q.goods-receipt-retry-1
+      receipt-retry-2: q.goods-receipt-retry-2
+    listener:
+      simple:
+        default-requeue-rejected: false
+rabbitmq:
+  retry:
+    retry-queue-ttl: 2000
+    count: 2

@@ -1,5 +1,7 @@
 package pl.kempa.saska.receiptproducer.service.impl;
 
+import java.util.List;
+
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
@@ -22,8 +24,8 @@ public class ReceiptProduceServiceImpl implements ReceiptProduceService<GoodsRec
 	}
 
 	@Override
-	public void produceReceipt(GoodsReceiptDTO dto, String exchange, String routingKey) {
+	public void produceReceipt(GoodsReceiptDTO dto, String exchange, List<String> routingKeys) {
 		log.info("[PRODUCER] is sending goods receipt {}", dto);
-		rabbitTemplate.convertAndSend(exchange, routingKey, dto);
+		routingKeys.parallelStream().forEach(rk -> rabbitTemplate.convertAndSend(exchange, rk, dto));
 	}
 }

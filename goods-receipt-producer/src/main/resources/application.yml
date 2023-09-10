@@ -11,5 +11,6 @@ spring:
     password: guest
     exchange:
       receipt-produce: x.goods-receipt-produce
-#    routingkey:
-#      receipt-produce: rk.goods-receipt-produce
+    routing-key:
+      receipt-produce-1: rk.goods-receipt-produce-1
+      receipt-produce-2: rk.goods-receipt-produce-2
