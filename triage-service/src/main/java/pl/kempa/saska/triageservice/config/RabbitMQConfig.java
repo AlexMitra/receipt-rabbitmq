@@ -4,10 +4,12 @@ import java.util.Map;
 
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Declarables;
+import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.ExchangeBuilder;
 import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.HeadersExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -42,6 +44,15 @@ public class RabbitMQConfig {
 	@Value("${spring.rabbitmq.queue.receipt-produce-2}")
 	private String receiptProduceQ2;
 
+	@Value("${spring.rabbitmq.exchange.dead-letter}")
+	private String dlx;
+
+	@Value("${spring.rabbitmq.routing-key.dead-letter}")
+	private String dlrk;
+
+	@Value("${spring.rabbitmq.queue.dead-letter}")
+	private String dlq;
+
 	@Bean
 	public ConnectionFactory connectionFactory() {
 		CachingConnectionFactory cachingConnectionFactory = new CachingConnectionFactory(host);
@@ -51,13 +62,13 @@ public class RabbitMQConfig {
 	}
 
 	@Bean
-	public Declarables fanoutBindings() {
-		Queue fanoutQueue = new Queue(receiptFailedQ, true);
-		FanoutExchange fanoutExchange = new FanoutExchange(receiptFailedEx, true, false);
+	public Declarables receiptFailedBindings() {
+		var failedQueue = new Queue(receiptFailedQ, true);
+		var fanoutExchange = new FanoutExchange(receiptFailedEx, true, false);
 		return new Declarables(
-				fanoutQueue,
+				failedQueue,
 				fanoutExchange,
-				BindingBuilder.bind(fanoutQueue).to(fanoutExchange));
+				BindingBuilder.bind(failedQueue).to(fanoutExchange));
 	}
 
 	@Bean
@@ -68,9 +79,9 @@ public class RabbitMQConfig {
 	}
 
 	@Bean
-	public Declarables headersBindings() {
-		Queue receiptQueue1 = new Queue(receiptProduceQ1, true);
-		Queue receiptQueue2 = new Queue(receiptProduceQ2, true);
+	public Declarables receiptReturnBindings() {
+		var receiptQueue1 = new Queue(receiptProduceQ1, true);
+		var receiptQueue2 = new Queue(receiptProduceQ2, true);
 		return new Declarables(
 				BindingBuilder.bind(receiptQueue1)
 						.to(receiptReturnExchange())
@@ -81,6 +92,17 @@ public class RabbitMQConfig {
 						.whereAll(Map.of("queue", receiptProduceQ2))
 						.match()
 		);
+	}
+
+	@Bean
+	public Declarables deadLetterBinding() {
+		var dlQueue = QueueBuilder.durable(dlq)
+				.build();
+		var dlExchange = new DirectExchange(dlx, true, false);
+		return new Declarables(
+				dlQueue,
+				dlExchange,
+				BindingBuilder.bind(dlQueue).to(dlExchange).with(dlrk));
 	}
 
 	@Bean

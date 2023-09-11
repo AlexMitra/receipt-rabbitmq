@@ -12,10 +12,14 @@ spring:
     exchange:
       receipt-failed: x.goods-receipt-failed
       receipt-return: x.goods-receipt-return
+      dead-letter: x.goods-receipt-dl
+    routing-key:
+      dead-letter: rk.goods-receipt-dl
     queue:
       receipt-failed: q.goods-receipt-failed
       receipt-produce-1: q.goods-receipt-produce-1
       receipt-produce-2: q.goods-receipt-produce-2
+      dead-letter: q.goods-receipt-dl
   datasource:
     url: jdbc:h2:mem:testdb;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver

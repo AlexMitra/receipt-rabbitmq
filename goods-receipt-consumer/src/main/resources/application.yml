@@ -14,9 +14,11 @@ spring:
       receipt-failed: x.goods-receipt-failed
       receipt-retry-1: x.goods-receipt-retry-1
       receipt-retry-2: x.goods-receipt-retry-2
+      dead-letter: x.goods-receipt-dl
     routing-key:
       receipt-produce-1: rk.goods-receipt-produce-1
       receipt-produce-2: rk.goods-receipt-produce-2
+      dead-letter: rk.goods-receipt-dl
     queue:
       receipt-produce-1: q.goods-receipt-produce-1
       receipt-produce-2: q.goods-receipt-produce-2
@@ -29,3 +31,4 @@ rabbitmq:
   retry:
     retry-queue-ttl: 2000
     count: 2
+  message-ttl: 10000

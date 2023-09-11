@@ -3,6 +3,7 @@ package pl.kempa.saska.receiptconsumer.listener;
 import java.util.Random;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
@@ -25,11 +26,15 @@ public class ReceiptConsumeListener {
 			"${spring.rabbitmq.queue.receipt-produce-1}",
 			"${spring.rabbitmq.queue.receipt-produce-2}"
 	})
-	public void onReceiptConsume(GoodsReceiptDTO receiptDTO, @Header("amqp_consumerQueue") String queue) {
+	public void onReceiptConsume(GoodsReceiptDTO receiptDTO, @Header("amqp_consumerQueue") String queue)
+			throws InterruptedException {
 		if (receiptDTO.potential().equals(Potential.ERROR) && queue.contains(String.valueOf(this.queueNum))) {
 			log.warn("[CONSUMER EXCEPTION] there is an exception for goods receipt {} from [QUEUE] {}", receiptDTO,
 					queue);
-			throw new UnsupportedOperationException("Some randon exception");
+			if (new Random().nextBoolean()) {
+				Thread.sleep(500);
+			}
+			throw new UnsupportedOperationException("Some random exception");
 		}
 		if (receiptDTO.potential().equals(Potential.RECOVERED)) {
 			log.info("[CONSUMER RECOVERED] is receiving goods receipt {} from [QUEUE] {}", receiptDTO, queue);

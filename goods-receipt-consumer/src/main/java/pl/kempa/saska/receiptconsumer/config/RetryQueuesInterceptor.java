@@ -34,6 +34,9 @@ public class RetryQueuesInterceptor implements MethodInterceptor {
 	@Value("${rabbitmq.retry.count}")
 	private int countLimit;
 
+	@Value("${rabbitmq.message-ttl}")
+	private int messageTTL;
+
 	@Value("${spring.rabbitmq.queue.receipt-produce-1}")
 	private String receiptProduceQ1;
 
@@ -51,6 +54,13 @@ public class RetryQueuesInterceptor implements MethodInterceptor {
 			throws Throwable {
 		return tryConsume(invocation, this::ack, (mac, e) -> {
 			try {
+//				MessageProperties props = mac.message.getMessageProperties();
+//				String expired = props.getHeader("x-first-death-reason");
+//				System.out.println(props.getHeaders());
+//				if("expired".equalsIgnoreCase(expired)) {
+//					mac.channel.basicReject(props.getDeliveryTag(), false);
+//					return;
+//				}
 				int retryCount = getRetryCount(mac);
 				if (retryCount >= countLimit) {
 					if (recoverer != null) {
@@ -107,12 +117,13 @@ public class RetryQueuesInterceptor implements MethodInterceptor {
 		var retryExchange = originalQueues2RetryExchanges.get(properties.getConsumerQueue());
 		rabbitTemplate.convertAndSend(retryExchange, "", mac.message, m -> {
 			var props = m.getMessageProperties();
+//			long time = Double.valueOf(1000 * Math.pow(3, retryCount)).longValue();
+//			props.setExpiration(String.valueOf(time));
 			props.setHeader("x-retried-count", String.valueOf(retryCount + 1));
 			props.setHeader("x-original-exchange", props.getReceivedExchange());
 			props.setHeader("x-original-routing-key", props.getReceivedRoutingKey());
 			return m;
 		});
-		mac.channel.basicReject(mac.message.getMessageProperties().getDeliveryTag(), false);
 	}
 
 	@Data

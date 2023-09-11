@@ -3,7 +3,7 @@ package pl.kempa.saska.receiptconsumer.config;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Declarables;
-import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -35,6 +35,15 @@ public class RabbitMQConfig {
 	@Value("${spring.rabbitmq.queue.receipt-produce-2}")
 	private String receiptProduceQ2;
 
+	@Value("${spring.rabbitmq.exchange.dead-letter}")
+	private String dlx;
+
+	@Value("${spring.rabbitmq.routing-key.dead-letter}")
+	private String dlrk;
+
+	@Value("${rabbitmq.message-ttl}")
+	private int messageTTL;
+
 	@Bean
 	public ConnectionFactory connectionFactory() {
 		CachingConnectionFactory cachingConnectionFactory = new CachingConnectionFactory(host);
@@ -45,8 +54,18 @@ public class RabbitMQConfig {
 
 	@Bean
 	public Declarables mainQueuesBindings() {
-		var receiptQueue1 = new Queue(receiptProduceQ1, true);
-		var receiptQueue2 = new Queue(receiptProduceQ2, true);
+		var receiptQueue1 = QueueBuilder.durable(receiptProduceQ1)
+				.deadLetterExchange(dlx)
+				.deadLetterRoutingKey(dlrk)
+				.ttl(messageTTL)
+				.maxLength(1)
+				.build();
+		var receiptQueue2 = QueueBuilder.durable(receiptProduceQ2)
+				.deadLetterExchange(dlx)
+				.deadLetterRoutingKey(dlrk)
+				.ttl(messageTTL)
+				.maxLength(1)
+				.build();
 		var topicExchange = new TopicExchange(receiptProduceEx, true, false);
 		return new Declarables(
 				receiptQueue1,
