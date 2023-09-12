@@ -3,7 +3,6 @@ package pl.kempa.saska.receiptconsumer.listener;
 import java.util.Random;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
@@ -31,9 +30,6 @@ public class ReceiptConsumeListener {
 		if (receiptDTO.potential().equals(Potential.ERROR) && queue.contains(String.valueOf(this.queueNum))) {
 			log.warn("[CONSUMER EXCEPTION] there is an exception for goods receipt {} from [QUEUE] {}", receiptDTO,
 					queue);
-			if (new Random().nextBoolean()) {
-				Thread.sleep(500);
-			}
 			throw new UnsupportedOperationException("Some random exception");
 		}
 		if (receiptDTO.potential().equals(Potential.RECOVERED)) {

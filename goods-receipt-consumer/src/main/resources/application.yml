@@ -29,6 +29,6 @@ spring:
         default-requeue-rejected: false
 rabbitmq:
   retry:
-    retry-queue-ttl: 2000
+    retry-queue-ttl: 2_000
     count: 2
-  message-ttl: 10000
+  message-ttl: 5_000
